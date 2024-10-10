@@ -1,0 +1,24 @@
+# Notes NanoRTax 7/11
+
+# Run executables from $PATH directory
+	- Oh this is what tells the terminal what commands to have
+	- So you put executables in this directory to have them be accessible fast instead of typing out whole address
+
+# That shell script was for their server in particular
+
+# Dependencies like conda and other stuff not in boqueron
+	- conda
+	- kraken2, centrifuge, blast (centrifuge not in boqueron)
+
+# Tried to python env for use pip, but didnt' work
+	- Need to get nextflow module (and dependencies)
+	- Or possibly have Diego run it on the CCC server
+
+# Modules are sort of like conda/docker environments
+	- loads particular programs to save on efficiency
+
+# install environment.yml 
+	- profile parameters
+	
+	
+	

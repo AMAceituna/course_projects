@@ -1,0 +1,47 @@
+# 1.
+
+  # I'm going to make a bold scientific claim that Mushrooms can't ungrow themselves.
+    # Idk tho. Fungi are weird.
+  # I assume that mushrooms also don't grow faster in a dry 50 C environment.
+  # Models are models. A simple line isn't going to be able to truly predict very far out.
+  # The temp collected was also only 20 or 25 which is a pretty small range to extrapolate from.
+
+# 2.
+
+  # The relationship with light in the second plot in #2 looked a little exponential.
+https://study.com/skill/learn/transforming-nonlinear-models-to-linear-explanation.html
+  # Well it's basic and not specifically about R, but a log() was the first thing that came to mind.
+http://sthda.com/english/articles/40-regression-analysis/162-nonlinear-regression-essentials-in-r-polynomial-and-spline-regression-models/
+  # This seems more like it but 1. I barely understand it and 2. #3 is asking for a "linear model" of nonlinear data
+
+# 3.
+
+nonlinear <- read.csv("./non_linear_relationship.csv")
+
+nonlinear %>% 
+  ggplot(aes(x=predictor,y=response)) +
+  geom_point() +
+  theme_minimal()
+  # Well it certainly doesn't look linear
+
+  # I'm not entirely sure what is being asked by "with a linear model"
+  # Isn't any linear model of nonlinear data going to be way off?
+
+  # You could just make it linear with glm and have a crappy model:
+crappymod <- glm(data = nonlinear,
+                 formula = response ~ predictor)
+summary(crappymod)
+
+  # Could just plot the log() of the response and make it linear that way
+nonlinear %>% 
+  ggplot(aes(x=predictor,y= log(response))) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal()
+  # Linear, but it seems like we've modified the data we want.
+
+logmod <- glm(data = nonlinear,
+                 formula = log(response) ~ predictor)
+summary(logmod)
+compare_performance(crappymod,logmod) %>% plot
+  # Well, it's better in most ways.

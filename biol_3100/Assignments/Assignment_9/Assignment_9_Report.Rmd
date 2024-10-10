@@ -1,0 +1,128 @@
+---
+title: "Assignment 9 Report"
+author: "Austen Miller"
+date: "2023-03-23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+```
+
+```{r}
+library(tidyverse)
+library(modelr)
+library(easystats)
+library(GGally)
+```
+
+# Use the data set “/Data/GradSchool_Admissions.csv”
+
+```{r}
+df <- read.csv("./GradSchool_Admissions.csv")
+```
+# You will explore and model the predictors of graduate school admission
+<br>  The “admit” column is coded as 1=success and 0=failure (that’s binary, so model appropriately)
+<br>  The other columns are the GRE score, the GPA, and the rank of the undergraduate institution, where I is “top-tier.”
+
+Okay so let's take a look:
+```{r}
+glimpse(df)
+```
+That's gonna need a little fixing.
+
+```{r}
+df$admit <- as.logical(df$admit)
+df$rank <- as.factor(df$rank)
+```
+
+Now let's see
+```{r}
+glimpse(df)
+```
+That's better.
+
+Let's start looking at it:
+```{r}
+df %>% 
+  select(admit,gre,gpa,rank) %>% 
+  ggpairs()
+```
+
+To me this looks like all three variables matter, but rank seems to matter more.
+It is interesting how rank doesn't seem to predict GPA and GRE as well as you would think.
+
+```{r}
+df %>% 
+  ggplot(aes(x=admit,fill=rank)) +
+  geom_bar(alpha=.5) +
+  theme_minimal() +
+  scale_y_continuous(n.breaks = 15) +
+  labs(x = "Admit",
+       y = "Count")
+```
+
+Yes yes, bar graphs bad.
+This shows the difference kind of well though.
+The ratio of Rank 1 schools is almost 1:1, but rank 4 is around 5:1.
+
+Let's make some mods.
+```{r}
+mod1 <- glm(data = df,
+            formula = admit ~ gpa + gre)
+
+mod2 <- glm(data = df,
+            formula = admit ~ gpa * gre)
+
+mod3 <- glm(data = df,
+           formula = admit ~ gre + gpa + rank,
+           family = "binomial")
+
+mod4 <- glm(data = df,
+            formula = admit ~ (gre * gpa) + rank,
+            family = "binomial")
+```
+
+Earlier it seemed like GPA and GRE scores were both important, but also were about the same. A mostly linear relationship that doesn't appear to be quite as predictive as rank.
+So, we've got boring mod1 and mod2 here mostly to see how much more rank matters
+
+How *do* they do against each other?
+```{r}
+compare_performance(mod1,mod2,mod3,mod4) %>% 
+  plot()
+```
+
+mod3 looks like the best to me.
+From my (admittedly kind of vague) understanding, AIC and BIC penalize over-fitting.
+I'm inclined to go with the model that does the best across those scores.
+
+Some plots with predictions:
+```{r}
+preds <- add_predictions(df,mod3,type = "response")
+
+preds %>% 
+  ggplot(aes(x = gpa, y = pred, color = rank, group = rank))+
+  geom_smooth() +
+  theme_minimal() +
+  labs(x = "GPA",
+       y = "Predictions") +
+  scale_colour_social()
+
+preds %>% 
+  ggplot(aes(x=gre,y=pred,color=rank,group=rank)) +
+  geom_smooth() +
+  theme_minimal() +
+  labs(x = "GRE Score",
+       y = "Predictions") +
+  scale_colour_social()
+```
+
+I wanted to find a better way to do this, but could not.
+Maybe something like a pivot_wider on gpa/gre, making that a factor, and then facet_wrapping on that, but I'm pretty sure that would mess up the data. It would put the GRE and GPA values in the same column.
+
+Ngl, this data is a little depressing. I take it that these are real stats?
+Oof.
+
+
+
+

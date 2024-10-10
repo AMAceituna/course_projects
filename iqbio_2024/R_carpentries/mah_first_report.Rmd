@@ -1,0 +1,47 @@
+---
+title: "Marky-Markdown"
+author: "Jeffrey the Sock Thief"
+date: "2024-06-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+A list:
+
+* bold with **double-asterisks**
+* italics with _underscores_
+* code-type font with `backticks`
+
+A numbered list:
+
+1. First
+1. Second
+1. Third
+
+
+Another numbered list:
+
+4. It counts from the number you start with
+4. Second
+4. Third
+
+# Title
+
+
+## Main Section
+
+## Discussion
+
+Please fund us 
+
+
+### Sub-section
+
+
+#### Sub-sub-section
+
+
+

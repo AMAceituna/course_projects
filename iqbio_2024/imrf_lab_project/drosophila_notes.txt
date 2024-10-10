@@ -1,0 +1,38 @@
+Drosophila As a Model Organism Notes
+
+Nomenclature matters more than knowing specific mutation
+	Capitalization matters in drosophila
+	
+Many genes named after the mutation because of early discoveries before genes themselves
+
+Thomas Hunt Morgan 
+	White eye mutants showed sex linked genes
+	Many famous students and many nobel prizes from other fly discoveries (hox genes)
+	
+4 Chromosomes
+	#4 is tiny and not really used. Doesn't mutate that much
+	
+Nomenclature:
+
+Wildtype
+	+/+;+/+ homozygous
+		; is a separator
+		Homozygous wild type shortened to just + or OreR or WT
+		Male has +/7 in sex chroms
+
+Non Wildtype
+	Sb^1,e^1 Comma used as a separator that shows multiple alells on same chroms
+	
+Balancer Chroms
+	lethal homozygous (recessive)
+	visible markers
+	no recombination
+	
+	"Balancer like"
+		sometimes recombines
+		
+	It's like the mutation you want is unadaptive, so you need a balancer that is even less adaptive
+	Otherwise it would get filtered out
+	Needs to be lethal homozygously so that it's filtered out,
+	and needs to be dominant, so you can tell the genotypes of
+	heterozygotes

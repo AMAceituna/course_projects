@@ -1,0 +1,801 @@
+---
+title: "Bar Plots of Species per Barcode"
+author: "Quinones-Sanchez, Carlos L."
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Analysis of Species Detected per Barcode/Sample
+
+## Importing the libraries
+
+This are some packages that will be used to make the bar plots. 
+
+To run the code, press Ctrl + Shift + Enter.
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(RColorBrewer)
+library(randomcoloR)
+```
+
+## Importing the data
+
+*This part was made using the documents path in my computer. Changes will likely be necessary when running the script to ensure the data can be imported.*
+
+To ensure you can import the data, find the file using the lower right window inside RStudio (->). Once you find the file, click on it and press Import Dataset. This will bring up a window with a preview of the data, import options, and a code preview. In the code preview area, copy the read_csv("name_of_file_here.csv") part and paste it in the chunk below (substituing the read_csv() function already present).
+
+*It is recommended that you keep the same variable name (barcode_data) when importing the data, as the rest of the script was made using that variable. If you wish to change the variable name, make sure to change everything that says "barcode_data" and substitue it for the variable you set, otherwise an "object not found" error will be triggered.*
+
+```{r}
+# This is a chunk
+
+library(readr)
+# getwd()
+barcode_data <- read.csv("CSV_Files/data_jan/classification_16s_barcode_v1.csv") #Substitue this read_csv() with the one copied from the code preview
+
+head(barcode_data)
+```
+  
+## Making the bar plots for each barcode
+
+This part of the script is where the bar plots can be made using the ggplot2 library. To organize this section, I recommend putting a subtitle indicating which barcode is being plotted (Similar to what is done for barcode 1).
+
+*The plot for barcode01 is already made. To make the bar plots for the other samples, copy and paste the entire chunk and change the barcode number inside the quotation marks in the        filter(barcode == "barcode01"...) line. Ggplot offers many ways to personalize the plots and make them presentable for publication, like changing the colour palette, formatting some text, or even adding labels to certain parts of the graph. If you have any questions or want to change details of the plot, feel free to contact Carlos for help.*
+
+**VERY IMPORTANT**: The ggsave() function allows you to save the **LAST MADE PLOT** using the format of your choice. **IT IS IMPERATIVE THAT YOU CHANGE THE NAME OF THE FILE INSIDE GGSAVE() OR EVERY PLOT YOU SAVE WILL SUBSTITUE THE LAST ONE YOU MADE**. Be very mindful of changing the barcode number inside ggsave() before running the full code, as to ensure you don't accidentally delete a different figure. To save the figure, remove the hashtag (#) before ggsave().
+
+*Note:* To change the format that the figure will be saved in, change the .png in the name of the figure in ggsave() to the format of your choice (eg.: .jpeg, .pdf, .tiff, etc.). The figure will appeared saved inside the same folder the .rproject file is saved (ideally, it's the same folder this rmarkdown was saved in, but that might not always be the case). Ggsave() also offers options to change the sized of the figure that gets saved, in case it is too small to see it or use it for publication/poster. If you have any questions or need help changing the save settings or finding the figure, feel free to contact Carlos for help.
+
+
+### Barcode 1
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode01" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 1", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode01.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode01" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 2
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode02" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 2", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode02.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode02" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 3
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode03" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 3", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode03.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode03" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 4
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode04" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 4", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode04.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode04" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 5
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode05" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 5", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode05.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode05" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 6
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode06" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 6", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode06.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode06" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 8
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode08" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 8", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode08.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode08" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 9
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode09" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 9", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode09.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode09" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 10
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode10" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 10", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode10.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode10" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 11
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode11" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 11", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode11.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode11" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 12
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode12" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 12", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode12.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode12" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 13
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode13" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 13", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode13.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode13" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 14
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode14" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 14", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode14.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode14" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 15
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode15" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 15", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode15.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode15" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 16
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode16" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 16", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode16.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode16" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 17
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode17" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 17", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode17.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode17" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+### Barcode 18
+
+```{r}
+#This is the code to make the plots
+
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode18" & !is.na(genus)) %>% #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = genus, fill = genus)) +
+  labs(title = "Barcode 18", y = "Counts", fill = "Genus") +
+  theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+
+
+
+#ggsave("Bar_plot_genus_barcode18.png") #REMEMBER TO CHANGE THE NAME TO THE BARCODE YOU ARE PLOTTING
+```
+
+
+#### Counting the genus to compare with Epi2Me results
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  filter(barcode == "barcode18" & !is.na(genus)) %>%
+  count(genus)
+```
+
+
+
+
+**PARA UNIR LOS SAMPLES, HACER AVERAGE Y STANDARD ERROR. INCLUIR MAYBE EL GEOM_POINT() DE LOS CONTEOS**
+
+#Average Count of Bacteria Genus per Sample Group
+
+##Preparing the colour palette
+
+Since because of the high number of variables, a new color palette with discrete colors has to be created to avoid the colours in the barplots from blending together. We use the randomColoR package for this.
+
+*As color selection is random, colors will change whenever the following chunk is run. Thus, plots will likely look different whenever we run the next chunk.*
+
+For the sake of reproducibility, the randomcoloR package was only used to produce 100 distinctive colors to manually copy and paste into a list. This makes it so that the plots will always look the same whenever we run the script, on top of allowing to manually change the colors to be used in the plot.
+
+```{r}
+colour_scale = c("#00C39D", "#E3AC77", "#E663CB", "#EAA794", "#A01FB7",
+                 "#5845E1", "#C6F3AA", "#EA9051", "#5389A2","#92CA7F",
+                 "#A0F133", "#95F0AC", "#F4EB46", "#E4C5F0", "#A158EC",
+                 "#4B83F1", "#DB4163", "#B3B296","#55B3E8", "#62F4F3",
+                 "#A45389", "#A8A6E3", "#59D073", "#F0D49C", "#E3EFC9",
+                 "#AB8760", "#63F386","#3151CC", "#F6471B", "#A3B54E",
+                 "#B0B073", "#EB39AB", "#E57A90", "#EACEB5", "#5CD1D9",
+                 "#E5EBA0","#F16BA5", "#A63E45", "#EE9BE9", "#DEF2E8",
+                 "#5D3887", "#B1D4E8", "#61D4AD", "#A5B2D9", "#C7F087",
+                 "#CCF263", "#7228ED", "#CE43F4", "#EC756A", "#8676EA",
+                 "#EFAEE2", "#51567F", "#D9CDE2", "#F5E4E7","#4C8D7E",
+                 "#9AED83", "#89C1B6", "#EBB82D", "#BCBD39", "#E8F174",
+                 "#9C8B92", "#CFA7EA", "#5AEDA4","#F7DE6C", "#506FC0",
+                 "#4FE641", "#E198B2", "#D466EE", "#6399DB", "#C78CC7",
+                 "#A449C2", "#E17AC0","#D8ADB3", "#B397DE", "#C94592",
+                 "#86B724", "#BC9DC1", "#4BA469", "#ED27ED", "#80D74F",
+                 "#963794", "#BADDB4", "#AAEBE9", "#E42A87", "#BD796B",
+                 "#48EAD8", "#53F4C8", "#D47FE4", "#E0C16E", "#9B4757",
+                 "#918DEF", "#AD8D33", "#C7D2CC", "#996EF3", "#B786DB",
+                 "#91A0F2", "#5DC5E5", "#A7F4D5", "#C4E637", "#B700E8")
+
+pie(rep(1, 100), col=colour_scale)
+```
+
+
+##Classifying the barcodes in their respective sample groups
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(!is.na(genus), !is.na(sample_group)) %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = sample_group, fill = genus), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Genus per Sample", y = "", fill = "Genus") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+
+ggsave("Genus_per_sample_Jan.png", height = 7, width = 10, limitsize = FALSE)
+```
+
+## Genus per barcodes (separated in old and young flies)
+
+###Young Flies
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(!is.na(genus), !is.na(sample_group), 
+         sample_group == "young_5d_0expo" | 
+          sample_group == "young_5d_1expo" | 
+           sample_group == "young_5d_2expo") %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = barcode, fill = genus), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Genus in Young Flies", y = "", fill = "Genus") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+
+ggsave("Genus_young_flies_Jan.png", height = 7, width = 10, limitsize = FALSE)
+```
+
+###Old Flies
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(!is.na(genus), !is.na(sample_group), 
+         sample_group == "old_50d_0expo" | 
+          sample_group == "old_50d_1expo" | 
+           sample_group == "old_50d_2expo") %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = barcode, fill = genus), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Genus in Old Flies", y = "", fill = "Genus") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+
+ggsave("Genus_old_flies_Jan.png", height = 7, width = 10, limitsize = FALSE)
+```
+
+
+#Average Count of Acetobacter Species per Sample Group
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus, species) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(genus == "Acetobacter", !is.na(sample_group)) %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = sample_group, fill = species), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Acetobacter Species per Sample", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+
+ggsave("Aceobacter_species_per_sample_Jan.png", height = 7, width = 15, limitsize = FALSE)
+```
+
+##Acetobacter Species per barcode (separated in young and old flies)
+
+### Young Flies
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus, species) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(genus == "Acetobacter", !is.na(sample_group), 
+         sample_group == "young_5d_0expo" | 
+          sample_group == "young_5d_1expo" | 
+           sample_group == "young_5d_2expo") %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = barcode, fill = species), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Acetobacter Species in Young Flies", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+
+ggsave("Aceobacter_species_young_flies_Jan.png", height = 7, width = 15, limitsize = FALSE)
+```
+
+### Old Flies
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus, species) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(genus == "Acetobacter", !is.na(sample_group), 
+         sample_group == "old_50d_0expo" | 
+          sample_group == "old_50d_1expo" | 
+           sample_group == "old_50d_2expo") %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = barcode, fill = species), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Acetobacter Species in Old Flies", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+
+ggsave("Aceobacter_species_old_flies_Jan.png", height = 7, width = 15, limitsize = FALSE)
+```
+
+
+
+
+
+##Acetobacter counts in samples
+
+```{r}
+barcode_data %>% 
+  select(barcode, genus, species) %>% 
+  mutate(sample_group = case_when(
+    barcode == "barcode01" | barcode == "barcode02" | barcode == "barcode03" ~ "young_5d_0expo",
+    barcode == "barcode04" | barcode == "barcode05" | barcode == "barcode06" ~ "young_5d_1expo",
+    barcode == "barcode08" | barcode == "barcode09" ~ "young_5d_2expo",
+    barcode == "barcode10" | barcode == "barcode11" | barcode == "barcode12" ~ "old_50d_0expo",
+    barcode == "barcode13" | barcode == "barcode14" | barcode == "barcode15" ~ "old_50d_1expo",
+    barcode == "barcode16" | barcode == "barcode17" | barcode == "barcode18" ~ "old_50d_2expo",
+    TRUE ~ NA)) %>% 
+  filter(genus == "Acetobacter", !is.na(sample_group)) %>%  #Change the "barcode01" argument for the barcode you wish to plot
+  ggplot() +
+  geom_bar(aes(x = sample_group, fill = species), position = "fill") +
+  scale_y_continuous(labels = scales::percent) +
+  scale_fill_manual(values = colour_scale) +
+  labs(title = "Acetobacter Species per Sample", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

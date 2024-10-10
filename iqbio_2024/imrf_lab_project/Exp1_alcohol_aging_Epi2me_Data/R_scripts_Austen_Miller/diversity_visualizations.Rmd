@@ -1,0 +1,1251 @@
+---
+title: "Diversity Visualizations: EtOH Exposure and Age Experiment"
+author: "Austen Miller, Dra. Imilce Rodriguez-Fernandez Lab, UPR"
+date: "2024-07-31"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+## Intro Information
+
+This is an R Markdown file. Basically, it's a way in R Studio to generate html
+documents with code chunks, and their outputs, included.
+
+Ideally, this script should be able to be used for other similar datasets by
+only modifying the directory paths where they are stored.
+
+This script is written with the assumption that the data is in the same style as
+this Epi2me classification data table. A .csv with a species column using binomial names,
+and column with barcodes. If that data is included, but not quite in that format,
+the tidyverse packages can likely fix that.
+
+I have changed what I can, but some sections are not written flexibly. I have provided explanations for those in their sections, but briefly:
+
+- The barcodes and labels in formatting and beta diversity will need to be changed to whatever is being used in other experiments.
+
+- What the ggplot() functions in the visualizations are using as the X, and Y axes in their aes() functions will also need to be changed if other experiments are using things besides etoh_exp and age as variables. Plot titles and axis titles in the visualizations will also need to be changed to whatever other experiments need.
+
+- The taxonomic ranks in Taxonomic assignment may need to have ranks added or removed, based on whether those ranks are included in the assignment of the dataset.
+
+
+
+If a code chunk is causing errors, it can be "commented out" so that it doesn't run.
+Simply add a hashtag in front of the lines you don't want to run.
+
+- Comment shortcut in R Studio: ctr-shift-c (you can highlight multiple at once)
+
+For troubleshooting you can run highlighted sections of code, without running the
+entire script.
+
+- Run shorcut in R Studio: ctr-enter
+
+I have put more specific instructions on what the code does/how to use it in
+comments within the code chunks.
+
+
+## Setup
+
+If these libraries are not installed yet, simply use the function install.package("package_name"),
+or find it with the install button in the packages tab in the bottom-right panel
+of R studio.
+
+```{r Setup, echo=TRUE, results='hide'}
+## Setup
+library(tidyverse)
+library(vegan)
+library(taxize)
+library(usethis)
+library(phyloseq)
+
+# To cite the packages use the citation function and it'll output in the console
+citation("tidyverse")
+citation("vegan")
+citation("taxize")
+citation("phyloseq")
+
+getwd() # Shows the current working directory. Set the setwd() line to wherever the data is instead.
+setwd("~/Desktop/course_projects/iqbio_2024/imrf_lab_project/Exp1_alcohol_aging_Epi2me_Data/")
+
+# Read in the data
+class_data <- read.csv("classification_16s_barcode-v1.csv")
+```
+The directory in setwd() is currently a directory in my computer. It'll need to
+be changed to read in data on other computers.
+
+The variable names don't matter, but *have* to be consistent.
+
+### Filtering
+
+This code filters out irrelevant barcodes and singletons (single reads).
+Single reads are likely contamination or misclassified given the nature of PCR.
+
+```{r}
+#### Filter Barcodes 
+# These two lines filter out barcodes that are not needed.
+# This removes barcode 23 (a control) and an unclassified barcode (some kind of
+# extra data that wasn't part of this experiment)
+class_data_filtered <- class_data %>% 
+  filter(!barcode %in% c("unclassified","barcode23"))
+# If there are other barcodes to be removed, replace "unclassified", "barcode23"
+# with those barcodes instead. Otherwise comment these lines out.
+
+
+#### Filter Singletons
+# Find the count of each species' reads per barcode
+class_data_filtered <- class_data_filtered %>% 
+  group_by(barcode, species) %>% 
+  mutate(species_per_barcode = n()) %>% 
+  ungroup()
+
+# For the record there are:
+class_data_filtered %>%
+  filter(species_per_barcode == 1) %>% 
+  count() # 683 singletons
+
+# Filter the singletons
+class_data_filtered <- class_data_filtered %>%
+  filter(species_per_barcode != 1)
+
+```
+
+### Formatting
+
+There are various issues with the format some of this data is in. 
+
+- Empty strings as species names
+
+- No sample ids with experiment info
+
+- Subspecies/strain complicating binomial names
+
+
+This code addresses these things, but may need to be commented out for data
+which does not have those issues.
+
+Dataframes can be viewed to check their formatting in R Studio with View(dataframe_name),
+or by clicking the button to their right in the environment tab in the top right panel
+of R Studio.
+
+```{r}
+#### Formatting
+
+# Creating different versions of the dataframe helps with debugging 
+# (you can see at what point things were changed)
+class_data_format <- class_data_filtered
+
+# The empty strings in the species column of the unclassified reads are creating
+# problems in the diversity calculation later on.
+# This code replaces those empty strings in the species column with "unclassified"
+class_data_format$species <- ifelse(class_data_filtered$species == "", "Unclassified", class_data_filtered$species)
+```
+
+
+### Nonflexible Section
+
+This section of code is not flexible, as the formatting required assigning specific names to things for the EtOH Exposure dataset. I have made it as simple to modify as I can.
+
+The labels for the barcodes are currently all specific to the EtOH exposure experiment.
+
+If you have the same number of barcodes, just change them to whatever your barcodes are called. If you have a different number, add or remove the barcodes from these three functions. If you want the exposure column or the age column to be something else, or are using different numbers of age or exposure, change those labels.
+```{r}
+# Add in the Sample IDs column based on barcodes
+class_data_format <- class_data_format %>% 
+  mutate(sample_id = case_when(
+    barcode %in% c("barcode01", "barcode02", "barcode03") ~ "young_5d_0_EtOH_exposition",
+    barcode %in% c("barcode04", "barcode05", "barcode06") ~ "young_5d_1_EtOH_exposition",
+    barcode %in% c("barcode07", "barcode08", "barcode09") ~ "young_5d_2_EtOH_exposition",
+    barcode %in% c("barcode10", "barcode11", "barcode12") ~ "old_50d_0_EtOH_exposition",
+    barcode %in% c("barcode13", "barcode14", "barcode15") ~ "old_50d_1_EtOH_exposition",
+    barcode %in% c("barcode16", "barcode17", "barcode18") ~ "old_50d_2_EtOH_exposition"))
+# Mutate creates a new column (left of =) based on the function to the right of the =. 
+# The functions of this chunk all work in essentially the same way by creating a new column with values based on when the value in another column is some particular value (I.e. etoh_exp column is filled with 0 on all the rows where the barcode column has "barcode02").
+
+# Add an exposure column based on barcode
+class_data_format <- class_data_format %>% 
+  mutate(etoh_exp = as.numeric(case_when( # also needs to be type numeric
+    barcode %in% c("barcode01", "barcode02", "barcode03") ~ "0",
+    barcode %in% c("barcode04", "barcode05", "barcode06") ~ "1",
+    barcode %in% c("barcode07", "barcode08", "barcode09") ~ "2",
+    barcode %in% c("barcode10", "barcode11", "barcode12") ~ "0",
+    barcode %in% c("barcode13", "barcode14", "barcode15") ~ "1",
+    barcode %in% c("barcode16", "barcode17", "barcode18") ~ "2")))
+
+# Add an age column based on barcode
+class_data_format <- class_data_format %>% 
+  mutate(age = case_when(
+    barcode %in% c("barcode01", "barcode02", "barcode03", "barcode04", "barcode05", "barcode06", "barcode07", "barcode08", "barcode09") ~ "young (5 days)",
+    barcode %in% c("barcode10", "barcode11", "barcode12", "barcode13", "barcode14", "barcode15", "barcode16", "barcode17", "barcode18") ~ "old (50 days)"
+  ))
+```
+
+
+#### Splitting off Strains/Subspecies
+
+This part should be fine on flexibility, assuming the species names are strings where the first part is a binomial name.
+```{r}
+# This is a function to split species and strain/subspecies
+split_species <- function(species) {
+  match <- regexpr("^[A-Za-z]+ [a-z]+", species)
+  if (match[1] != -1) {
+    species_name <- regmatches(species, match)
+    strain_subspecies <- sub("^[A-Za-z]+ [a-z]+ ?", "", species)
+  } else {
+    species_name <- species
+    strain_subspecies <- ""
+  }
+  return(c(species_name, strain_subspecies))
+}
+# Basically the function is finding which parts are binomial and splitting off 
+# the rest into a new column so we haven't lost the strain/subspecies data
+
+# Apply function to dataframe
+split_data <- t(apply(class_data_format["species"], 1, split_species))
+class_data_format <- cbind(class_data_format, species_name = split_data[,1], strain_subspecies = split_data[,2])
+
+# Replace original species column with the species column that doesn't have strains
+class_data_format <- class_data_format %>% select(-species)
+class_data_format <- class_data_format %>%
+  mutate(species = species_name)
+
+```
+
+## Relative Abundance Table
+
+Now we're going to make a table with the relative abundance of OTUs by barcode
+at different taxonimc levels.
+
+```{r}
+# Get rid of the extra columns
+class_data_relative_abundance <- class_data_format %>% 
+  select(barcode, sample_id, etoh_exp, age, strain_subspecies, species)
+
+# I am not including the genus column here because we're about to assign a new one
+# anyway. I checked, and (at least in this dataset) the genera that are already 
+# assigned are consistent with what's newly assigned.
+
+# If future datasets include taxonomic rank columns above species, the loop that
+# assigns taxonomy will see them as duplicates and change both columns' names
+# (I.e. family.x and family.y) 
+# This will break the script, so those other columns need to be removed.
+# Removal is easy, just don't put them in the columns included in this select().
+
+```
+
+
+### Taxonomic Assignment
+
+We have the species names, but we need the rest of the taxonomy for relative abundance.
+We can extrapolate the taxonomy from the species using the Taxize package and a 
+database (I'm using NCBI).
+
+
+
+#### Api Key for NCBI
+
+Getting the key and being able to use it has a few steps, but I have explained it
+in the comments below. The key needs to be added to R Studio's environment document.
+
+```{r}
+# API Key to use NCBI database 
+
+# We don't *have* to use NCBI, it just happens to be free.
+
+# Choose the database (e.g., "itis", "gbif", "eol", "worms", "ncbi")
+database <- "ncbi"
+
+# Adding the key is kind of a whole thing
+
+# taxize::use_entrez() # this function will take you to the NCBI website
+# Make a free account and generate an api key in your account settings
+
+# usethis::edit_r_environ() # this function will take you to the r environment document
+# In that document, copy paste ENTREZ_KEY = 'PasteYourNewAPIKeyHere' and save
+
+# Restart R studio for this to take effect
+
+```
+
+
+#### Function for assigning taxonomy
+
+The Taxize package has a great classification function, but no one wants to apply
+that hundreds of times and manually paste them together, so we need to loop it.
+We also need to have something catch duplicates, and give NAs if(when) errors occur
+or the taxonomy isn't found, instead of stopping the entire script.
+
+That means we need this complicated function:
+```{r}
+# Function to get taxonomy from a specific database
+get_taxonomy <- function(species_name, db) {
+  tryCatch({
+    tax_info <- classification(species_name, db = db)
+    if (!is.null(tax_info) && length(tax_info) > 0 && !is.null(tax_info[[1]])) {
+      tax_info <- tax_info[[1]]
+      if (is.list(tax_info) && !is.atomic(tax_info)) {
+        tax_info <- tax_info[!duplicated(tax_info$rank), ] # Remove duplicate ranks
+        return(tax_info)
+      }
+    }
+    # Return NA data frame if taxonomy not found
+    data.frame(rank = NA, name = NA)
+  }, error = function(e) {
+    # Return NA data frame if an error occurs
+    data.frame(rank = NA, name = NA)
+  })
+}
+
+```
+
+#### Ranks of Taxonomy
+
+This is a nuisance, but can probably be ignored if all you want is the typical taxonomic ranks.
+
+```{r}
+# Find uniquely occurring species
+species_unique <- unique(class_data_relative_abundance$species)
+
+# Initialize an empty list to store the taxonomy data
+taxonomy_data_list <- list()
+
+# Define the ranks that are in the taxonomic table
+
+# There is a problem that some of the species come back with different ranks included
+# in their taxonomies.
+# I.e some are typical KPCOFGS, others include stuff like "superkingdom bacteria"
+# or "subfamily"
+# Almost as if taxonomic ranks are a bit of a subjective construct...
+ranks <- c("superkingdom", "phylum", "class", "order",
+           "family", "genus", "species")
+
+# I'm finding these ranks to include by looking at the different rank columns in the species'
+# data frames in taxonomy_data_list after running through the loop once.
+# If you don't want to lose the data of the extra ranks, go through the classifications and check what ranks are being used. Then add those this list and the select function after the loop.
+
+# For things like "tribe" or "subfamily", only a few of the taxonomies used them anyway
+# I.e. Useless for relative abundance.
+
+# If you're using a dataset that doesn't include some of the ranks included here, you'll
+# get an error like "column (whatever rank) doesn't exist". Just delete that rank
+# from this list and the select() function after the loop. That should resolve the error.
+
+# I know there must be a far better way to do this, but I don't know how.
+# If someone could get the entire field of taxonomy to be consistent first,
+# that would be great.
+```
+
+#### Iterate Assignment
+
+This part should take a few minutes to run as it assigns taxonomy to every species.
+```{r, results='hide'}
+# Loop over each unique species using the created function to get the taxonomy
+for (species in species_unique) {
+  taxonomy <- get_taxonomy(species, database)
+  # If taxonomy is found create a data frame
+  if (!is.null(taxonomy) && nrow(taxonomy) > 0) {
+    taxonomy_df <- as.data.frame(t(taxonomy$name))
+    colnames(taxonomy_df) <- taxonomy$rank
+    taxonomy_df$species <- species
+    taxonomy_data_list[[species]] <- taxonomy_df
+  } else {
+    # Create a data frame with NA values if taxonomy not found
+    taxonomy_df <- as.data.frame(matrix(NA, nrow = 1, ncol = length(ranks)))
+    colnames(taxonomy_df) <- ranks
+    taxonomy_df$species <- species
+    taxonomy_data_list[[species]] <- taxonomy_df
+  }
+}
+# This also pivots the newly created taxonomy dataframes
+
+# Convert the list of data frames into a single data frame
+taxonomy_data <- bind_rows(taxonomy_data_list, .id = "species_id")
+
+# Make sure all columns are present and fill missing columns with NA
+taxonomy_data <- taxonomy_data %>%
+  select(species, all_of(ranks)) %>%
+  distinct()
+
+# And now to add the tax data onto the main dataframe
+class_data_relative_abundance <- left_join(class_data_relative_abundance, taxonomy_data, by = "species")
+
+# Reorder the columns for readability
+class_data_relative_abundance <- class_data_relative_abundance %>%
+  select(barcode, age, etoh_exp, species, genus, family, order, class, phylum, superkingdom)
+
+```
+
+
+### Calculate Relative Abundance
+
+Now that we have the taxonomy, calculating the relative abundance of these different
+levels should be relatively easy.
+
+Essentially it's just (#of thing in barcode)/(#total reads in barcode) copy/pasted
+for each rank, then added as a new column.
+
+```{r, results = 'hide'}
+#### Calculate Relative Abundance
+
+# Find total for each barcode
+class_data_relative_abundance <- class_data_relative_abundance %>%
+  group_by(barcode) %>%
+  mutate(total_barcode_reads = n())
+
+# Just species to phylum for now
+
+# Species
+# Find total for species per barcode
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  group_by(barcode, species) %>% 
+  mutate(species_per_barcode = n())
+
+# Calculate relative abundance for species
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  mutate(species_relative_abundance = species_per_barcode/total_barcode_reads)
+
+# "Unclassified" sounds nicer than NA for plotting
+class_data_relative_abundance$species <- ifelse(is.na(class_data_relative_abundance$species),
+                                                "Unclassified", class_data_relative_abundance$species)
+
+
+# Genus
+# Find total for genus per barcode
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  group_by(barcode, genus) %>% 
+  mutate(genus_per_barcode = n())
+
+# Calculate relative abundance for genus
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  mutate(genus_relative_abundance = genus_per_barcode/total_barcode_reads) %>% 
+  ungroup()
+
+# "Unclassified" sounds nicer than NA for plotting
+class_data_relative_abundance$genus <- ifelse(is.na(class_data_relative_abundance$genus),
+                                              "Unclassified", class_data_relative_abundance$genus)
+
+
+# Family
+# Find total for family per barcode
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  group_by(barcode, family) %>% 
+  mutate(family_per_barcode = n())
+
+# Calculate relative abundance for family
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  mutate(family_relative_abundance = family_per_barcode/total_barcode_reads) %>% 
+  ungroup()
+
+# "Unclassified" sounds nicer than NA for plotting
+class_data_relative_abundance$family <- ifelse(is.na(class_data_relative_abundance$family),
+                                              "Unclassified", class_data_relative_abundance$family)
+
+
+# Order
+# Find total for order per barcode
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  group_by(barcode, order) %>% 
+  mutate(order_per_barcode = n())
+
+# Calculate relative order for genus
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  mutate(order_relative_abundance = order_per_barcode/total_barcode_reads) %>% 
+  ungroup()
+
+# "Unclassified" sounds nicer than NA for plotting
+class_data_relative_abundance$order <- ifelse(is.na(class_data_relative_abundance$order),
+                                              "Unclassified", class_data_relative_abundance$order)
+
+
+# Class
+# Find total for class per barcode
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  group_by(barcode, class) %>% 
+  mutate(class_per_barcode = n())
+
+# Calculate relative class for genus
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  mutate(class_relative_abundance = class_per_barcode/total_barcode_reads) %>% 
+  ungroup()
+
+# "Unclassified" sounds nicer than NA for plotting
+class_data_relative_abundance$class <- ifelse(is.na(class_data_relative_abundance$class),
+                                              "Unclassified", class_data_relative_abundance$class)
+
+
+# Phylum
+# Find total for phylum per barcode
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  group_by(barcode, phylum) %>% 
+  mutate(phylum_per_barcode = n())
+
+# Calculate relative abundance for phylum
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  mutate(phylum_relative_abundance = phylum_per_barcode/total_barcode_reads) %>% 
+  ungroup()
+
+# "Unclassified" sounds nicer than NA for plotting
+class_data_relative_abundance$phylum <- ifelse(is.na(class_data_relative_abundance$phylum),
+                                              "Unclassified", class_data_relative_abundance$phylum)
+
+
+# This is out of order and the dataframe is ugly. Select() can rearrange columns
+class_data_relative_abundance <- class_data_relative_abundance %>% 
+  select(barcode, age, etoh_exp, total_barcode_reads, species, species_per_barcode,
+         species_relative_abundance, genus, genus_per_barcode, genus_relative_abundance,
+         family, family_per_barcode, family_relative_abundance, order, order_per_barcode,
+         order_relative_abundance, class, class_per_barcode, class_relative_abundance,
+         phylum, phylum_per_barcode, phylum_relative_abundance, superkingdom)
+
+# Now that the relative abundance table is done, it's useful to save a copy.
+write.csv(class_data_relative_abundance, "./eth_exp_relative_abundance.csv")
+
+```
+The last line will save a copy of the relative abundance as a csv. Comment out if you don't want this file.
+
+
+
+## Species Alpha Diversity
+
+This will be a model for doing alpha diversity on other ranks
+
+### Create a Count Matrix (Species)
+First we need a species count matrix (this is also necessary for beta diversity)
+
+```{r}
+#### Create a count matrix (Species)
+species_matrix <- class_data_relative_abundance %>%
+  group_by(barcode, species) %>% # Group data by barcode and species
+  summarise(count = n(), .groups = 'drop')
+# Create column with how many occurrences of each species in each barcode
+
+species_matrix <- species_matrix %>% 
+  pivot_wider(names_from = species, values_from = count, values_fill = list(count = 0))
+# Pivoting table wider. Species are now columns (i.e. table is literally "wider")
+# Using values_fill = list(count = 0)) to make it use 0 instead of NA.
+
+# Convert the count matrix to dataframe with barcodes as rownames
+species_matrix <- as.data.frame(species_matrix) # typecasting to dataframe
+rownames(species_matrix) <- species_matrix$barcode # make the barcodes the row names
+species_matrix <- species_matrix[,-1] # remove redundant column
+
+# Now that the species matrix is done, it's useful to save a copy.
+write.csv(species_matrix, "~/Desktop/eth_exp_species_matrix.csv")
+
+```
+The last line will save a copy of the relative abundance as a csv. Comment out if you don't want this file.
+
+
+### Calculate Alpha Diversity (Species)
+
+```{r}
+#### Alpha Diversity (Species)
+
+# All columns in the count matrix need to be numeric or vegan gets angry.
+species_matrix[] <- lapply(species_matrix, function(x) as.numeric(as.character(x)))
+# This is an anonymous function that makes everything in the count matrix
+# of type numeric
+
+# Calculate alpha diversity metrics
+shannon_diversity <- diversity(species_matrix, index = "shannon")
+# We're not using these other indexes right now, but they're here
+simpson_diversity <- diversity(species_matrix, index = "simpson")
+invsimpson_diversity <- diversity(species_matrix, index = "invsimpson")
+
+# Combine results into a data frame
+alpha_diversity <- data.frame(
+  barcode = rownames(species_matrix),
+  shannon = shannon_diversity,
+  simpson = simpson_diversity,
+  invSimpson = invsimpson_diversity
+)
+
+# The rest of this chunk is applying a similar formatting that we did earlier
+# This adds a column for the sample ids based on the barcode
+alpha_diversity <- alpha_diversity %>% 
+  mutate(sample_id = case_when(
+    barcode %in% c("barcode01", "barcode02", "barcode03") ~ "young_5d_0_EtOH_exposition",
+    barcode %in% c("barcode04", "barcode05", "barcode06") ~ "young_5d_1_EtOH_exposition",
+    barcode %in% c("barcode07", "barcode08", "barcode09") ~ "young_5d_2_EtOH_exposition",
+    barcode %in% c("barcode10", "barcode11", "barcode12") ~ "old_50d_0_EtOH_exposition",
+    barcode %in% c("barcode13", "barcode14", "barcode15") ~ "old_50d_1_EtOH_exposition",
+    barcode %in% c("barcode16", "barcode17", "barcode18") ~ "old_50d_2_EtOH_exposition"))
+
+# This adds a column for etoh exposure based on the sample id
+alpha_diversity <- alpha_diversity %>%
+  mutate(etoh_exp = case_when( # also needs to be numeric
+    str_detect(sample_id, "50d_0_") ~ "0",
+    str_detect(sample_id, "50d_1_") ~ "1",
+    str_detect(sample_id, "50d_2_") ~ "2",
+    str_detect(sample_id, "5d_0_") ~ "0",
+    str_detect(sample_id, "5d_1_") ~ "1",
+    str_detect(sample_id, "5d_2_") ~ "2"))
+
+# This adds an age column based on the sample id
+alpha_diversity <- alpha_diversity %>% 
+  mutate(age = case_when(
+    sample_id %in% c("young_5d_0_EtOH_exposition", "young_5d_1_EtOH_exposition", 
+                     "young_5d_2_EtOH_exposition") ~ "young (5 days)",
+    sample_id %in% c("old_50d_0_EtOH_exposition", "old_50d_1_EtOH_exposition", 
+                     "old_50d_2_EtOH_exposition") ~ "old (50 days)"
+  ))
+
+# This removes the non shannon indexes (for now)
+alpha_diversity <- alpha_diversity %>% 
+  select(c(barcode, age, etoh_exp, shannon))
+
+# # This just makes the names less ugly for the visualizations
+# alpha_diversity <- alpha_diversity %>%
+#   mutate(barcode = str_replace(barcode, "barcode", "Barcode "),
+#          age = str_replace(age, "old (50 days)", "Old (50 Days)"),
+#          age = str_replace(age, "young (5 days)", "Young (5 Days)"))
+
+```
+
+
+### Rarefaction Curve
+
+We should also take a look at the rarefaction curve
+
+```{r}
+# Rarefaction Curve
+raremax <- min(rowSums(species_matrix))
+rare <- rarecurve(species_matrix, step = 1, sample = raremax, col = "blue", cex = 0.6)
+
+```
+
+## Species Visualizations
+
+It's finally time to do visualizations!
+
+This should create a folder in your working directory called "plots" and save everything there. 
+```{r}
+#### Species Visualization
+
+#Create a directory for saving plots.
+dir.create("./plots")
+# (it's a subfolder wherever your working directory is)
+```
+
+Basic barcode alpha diversity barplot:
+```{r}
+# Basic barcode diversity barplot
+alpha_diversity %>%
+  ggplot(aes(x = barcode, y = shannon, fill = barcode)) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  scale_y_continuous(expand=c(0, 0), limits=c(0, 2.25)) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none",
+        panel.border = element_rect(colour = "black", fill = NA, linewidth = 1)) +
+  labs(title = "Alpha Diversity per Barcode (Species)", y = "Shannon Diversity Index", x = "Barcode")
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/species_barcode_diversity.png")
+```
+
+
+Boxplot comparing diversity of old and young flies across different levels of exposure:
+```{r}
+# Box Plot by Sample (exposure)
+alpha_diversity %>% 
+  ggplot(aes(x = etoh_exp, y = shannon, fill = age)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_y_continuous(expand=c(0, 0), limits=c(0, 2.5)) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 1, size = 15, face = "bold"),
+        axis.text.y = element_text(size = 12, face = "bold"),
+        axis.title = element_text(size = 14, face = "bold"),
+        legend.text = element_text(size = 12, face = "bold"),
+        legend.title = element_text(size = 12, face = "bold"),
+        panel.border = element_rect(colour = "black", fill = NA, linewidth = 1),
+        plot.title = element_text(size = 16, face = "bold")) +
+  labs(title = "Alpha Diversity By EtOH Exposure (Species)",
+       y = "Shannon Diversity Index", x = "EtOH Exposures")
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/species_boxplot_exposure_diversity.png")
+```
+
+
+### Color scale
+
+Some of this is modified from Carlos' script:
+"For the sake of reproducibility, the randomcoloR package was only used to produce 100 distinctive colors to manually copy and paste into a list. This makes it so that the plots will always look the same whenever we run the script"
+
+```{r}
+# Color Scale
+
+colour_scale <- c("#00C39D", "#E3AC77", "#E663CB", "#EAA794", "#A01FB7",
+                  "#5845E1", "#C6F3AA", "#EA9051", "#5389A2", "#92CA7F",
+                  "#A0F133", "#95F0AC", "#F4EB46", "#E4C5F0", "#A158EC",
+                  "#4B83F1", "#DB4163", "#B3B296", "#55B3E8", "#62F4F3",
+                  "#A45389", "#A8A6E3", "#59D073", "#F0D49C", "#E3EFC9",
+                  "#AB8760", "#63F386", "#3151CC", "#F6471B", "#A3B54E",
+                  "#B0B073", "#EB39AB", "#E57A90", "#EACEB5", "#5CD1D9",
+                  "#E5EBA0", "#F16BA5", "#A63E45", "#EE9BE9", "#DEF2E8",
+                  "#5D3887", "#B1D4E8", "#61D4AD", "#A5B2D9", "#C7F087",
+                  "#CCF263", "#7228ED", "#CE43F4", "#EC756A", "#8676EA",
+                  "#EFAEE2", "#51567F", "#D9CDE2", "#F5E4E7", "#4C8D7E",
+                  "#9AED83", "#89C1B6", "#EBB82D", "#BCBD39", "#E8F174",
+                  "#9C8B92", "#CFA7EA", "#5AEDA4", "#F7DE6C", "#506FC0",
+                  "#4FE641", "#E198B2", "#D466EE", "#6399DB", "#C78CC7",
+                  "#A449C2", "#E17AC0", "#D8ADB3", "#B397DE", "#C94592",
+                  "#86B724", "#BC9DC1", "#4BA469", "#ED27ED", "#80D74F",
+                  "#963794", "#BADDB4", "#AAEBE9", "#E42A87", "#BD796B",
+                  "#48EAD8", "#53F4C8", "#D47FE4", "#E0C16E", "#9B4757",
+                  "#918DEF", "#AD8D33", "#C7D2CC", "#996EF3", "#B786DB",
+                  "#91A0F2", "#5DC5E5", "#A7F4D5", "#C4E637", "#B700E8",
+                  "#eda26d", "#dfb0f2", "#565fd3", "#78ed5e", "#491fe0",
+                  "#99f7b5", "#e59382", "#9677dd", "#5eeff2", "#e8a36a",
+                  "#c0c5f7", "#6138a0", "#11a0f9", "#306fd3", "#1ca0cc",
+                  "#d32eaa", "#bbff32", "#c5e5f9", "#215b91", "#6a61d3",
+                  "#dda7ef", "#076eff", "#116b00", "#5b06a5", "#ab8ef2",
+                  "#50c5e5", "#de14e5", "#a9e87f", "#2ca31a", "#e522c1",
+                  "#8dbde0", "#159191", "#856eef", "#80f2c0", "#77eaad",
+                  "#0ad3c9", "#e59ecb", "#d6f9a2", "#06e895", "#40f218",
+                  "#59d672", "#44e5d0", "#13a32b", "#45ff38", "#f78b33",
+                  "#38edb7", "#e2a876", "#e5ffaf", "#ffccda", "#6edb5e",
+                  "#7ded90", "#ed53ea", "#20c0c9", "#f96175", "#bdebf9",
+                  "#9af293", "#bbf75b", "#fcbdee", "#a8f7f7", "#16ce8e",
+                  "#499fb2", "#ff4cb1", "#adc910", "#f2a58a", "#30f4ac",
+                  "#bdf9f8", "#67d0e0", "#04a37e", "#e87066", "#370277",
+                  "#e6f298", "#464ff4", "#40dd3e", "#f2ae60", "#f4d455",
+                  "#f4a1d9", "#80d350", "#d60276", "#dd9166", "#04a59d",
+                  "#39e5cb", "#ea98ba", "#c3f9a9", "#f2e346", "#fc9f7e",
+                  "#55cc3d", "#691ebf", "#5fc6e2", "#64d7db", "#aa1450",
+                  "#b587db", "#9383e2", "#5caf03", "#e0ce57", "#6bf948",
+                  "#4ee54b", "#ffbff5", "#eabbf7", "#1c32d8", "#e0c918")
+
+# I've added another 100 colors because the scale wasn't large enough to cover all species
+# You can generate another 100 for the list with randomcoloR::randomColor(100)
+
+```
+
+
+### Species composition plot (Sample)
+```{r}
+# This section groups together the species that have fewer than 65 reads
+# The legend was absolutely massive and unreadable otherwise.
+# If you want to use the ungrouped species, comment out these lines,
+# and change species_grouped to species under "create the plot"
+# (It's in there twice: in select(), and next to fill = )
+species_counts <- class_data_relative_abundance %>%
+  count(species, sort = TRUE) # Make a df with the counts of the species
+
+class_data_relative_abundance <- class_data_relative_abundance %>%
+  left_join(species_counts, by = "species") %>% # make a new column with the counts
+  mutate(species_grouped = ifelse(n <= 65 , "Various (Fewer than 65 Reads)", species)) %>%
+  select(-n) # Anything fewer than 20 is unreadable tbh
+
+species_counts <- class_data_relative_abundance %>% 
+  count(species_grouped, sort = TRUE)# Let's see how big is the Various group now?
+
+
+
+# Uncomment this line, and the scale_x_discrete() line, if you want less ugly labels.
+# custom_labels <- c("0x (Old)", "1x (Old)", "2x (Old)", "0x (Young)", "1x (Young)", "2x (Young)")
+# These can be set to whatever you like, but make sure they're in the order you want them!
+
+
+# Create the plot
+class_data_relative_abundance %>%
+  select(etoh_exp, age, species_grouped) %>%
+  ggplot() +
+  geom_bar(aes(x = interaction(etoh_exp, age), fill = species_grouped), position = "fill") +
+  scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
+  scale_fill_manual(values = colour_scale) +
+  # scale_x_discrete(labels = custom_labels) +
+  theme_minimal() +
+  labs(title = "Species Composition by EtOH Exposure and Age Group", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01, size = 15, face = "bold"),
+        axis.text.y = element_text(size = 15, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"),
+        legend.text = element_text(face = "bold"),
+        legend.title = element_blank())
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/species_composition.png",  dpi = 1000, width = 12, height = 8, units = "in")
+```
+
+
+### Species Composition Plot (Barcode)
+
+```{r}
+# Create the plot
+class_data_relative_abundance %>%
+  select(barcode, species_grouped) %>%
+  ggplot() +
+  geom_bar(aes(x = barcode, fill = species_grouped), position = "fill") +
+  scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
+  scale_fill_manual(values = colour_scale) +
+  # scale_x_discrete(labels = custom_labels) +
+  theme_minimal() +
+  labs(title = "Species Composition by Barcode", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01, size = 15, face = "bold"),
+        axis.text.y = element_text(size = 15, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"),
+        legend.text = element_text(face = "bold"),
+        legend.title = element_blank())
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/species_composition_barcode.png",  dpi = 1000, width = 12, height = 8, units = "in")
+```
+
+
+
+### Specific Genus Composition Version
+
+This is for looking at the composition within one particular genus. Atm it's set to acetobacter, but can be changed very easily by changing 
+filter(genus == "Acetobacter") to whatever genus you like. You may also want to change the title.
+
+(This might cause an error if left alone and there's no acetobacter in the dataset. Comment out the chunk if that's an issue.)
+
+```{r}
+#### Acetobacter Composition Version of Composition Plot
+
+# Uncomment this line, and the scale_x_discrete() line, if you want less ugly labels.
+# custom_labels <- c("0x (Old)", "1x (Old)", "2x (Old)", "0x (Young)", "1x (Young)", "2x (Young)")
+# These can be set to whatever you like, but make sure they're in the order you want them!
+
+# Create the plot
+class_data_relative_abundance %>% 
+  filter(genus == "Acetobacter") %>%
+  select(etoh_exp, age, species) %>%
+  ggplot() +
+  geom_bar(aes(x = interaction(etoh_exp, age), fill = species), position = "fill") +
+  scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
+  scale_fill_manual(values = colour_scale) +
+  # scale_x_discrete(labels = custom_labels) +
+  theme_minimal() +
+  labs(title = "Species Composition by EtOH Exposure and Age Group (Acetobacter)", y = "", fill = "species") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01, size = 15, face = "bold"),
+        axis.text.y = element_text(size = 15, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"),
+        legend.text = element_text(face = "bold"),
+        legend.title = element_blank())
+
+```
+
+
+## Genus Alpha Diversity
+
+This is essentially a copy of the species alpha diversity with different names.
+This could be used to create even more alpha diversity calculations and visualizations of higher ranks.
+
+Of course, if this is causing problems, and you don't care about genus, comment it all out.
+
+We need to create another count matrix.
+```{r}
+#### Create a count matrix (Genus)
+
+genus_matrix <- class_data_relative_abundance %>%
+  group_by(barcode, genus) %>% # Group data by barcode and genus
+  summarise(count = n(), .groups = 'drop')
+# Create column with how many occurrences of each genus in each barcode
+
+genus_matrix <- genus_matrix %>%
+  pivot_wider(names_from = genus, values_from = count, values_fill = list(count = 0))
+# Pivoting table wider. Species are now columns (i.e. table is literally "wider")
+# Using values_fill = list(count = 0)) to make it use 0 instead of NA.
+
+# Convert the count matrix to dataframe with barcodes as rows
+genus_matrix <- as.data.frame(genus_matrix) # typecasting to dataframe
+rownames(genus_matrix) <- genus_matrix$barcode # make the barcodes the row names
+genus_matrix <- genus_matrix[,-1] # remove redundant column
+
+```
+
+
+
+#### Calculate Alpha Diversity (Genus)
+```{r}
+#### Alpha Diversity (Genus)
+
+# All columns in the count matrix need to be numeric or vegan gets angry.
+genus_matrix[] <- lapply(genus_matrix, function(x) as.numeric(as.character(x)))
+# This is an anonymous function that makes everything in the count matrix
+# of type numeric
+
+# Calculate alpha diversity metrics
+shannon_diversity_genus <- diversity(genus_matrix, index = "shannon")
+# We're not using these other indexes right now, but they're here
+simpson_diversity_genus <- diversity(genus_matrix, index = "simpson")
+invsimpson_diversity_genus <- diversity(genus_matrix, index = "invsimpson")
+
+# Combine results into a data frame
+alpha_diversity_genus <- data.frame(
+  barcode = rownames(genus_matrix),
+  shannon = shannon_diversity_genus,
+  simpson = simpson_diversity_genus,
+  invSimpson = invsimpson_diversity_genus
+)
+
+# The rest of this chunk is applying a similar formatting that we did earlier
+# This adds a column for the sample ids based on the barcode
+alpha_diversity_genus <- alpha_diversity_genus %>% 
+  mutate(sample_id = case_when(
+    barcode %in% c("barcode01", "barcode02", "barcode03") ~ "young_5d_0_EtOH_exposition",
+    barcode %in% c("barcode04", "barcode05", "barcode06") ~ "young_5d_1_EtOH_exposition",
+    barcode %in% c("barcode07", "barcode08", "barcode09") ~ "young_5d_2_EtOH_exposition",
+    barcode %in% c("barcode10", "barcode11", "barcode12") ~ "old_50d_0_EtOH_exposition",
+    barcode %in% c("barcode13", "barcode14", "barcode15") ~ "old_50d_1_EtOH_exposition",
+    barcode %in% c("barcode16", "barcode17", "barcode18") ~ "old_50d_2_EtOH_exposition"))
+
+# This adds a column for etoh exposure based on the sample id
+alpha_diversity_genus <- alpha_diversity_genus %>%
+  mutate(etoh_exp = case_when( # also needs to be numeric
+    str_detect(sample_id, "50d_0_") ~ "0",
+    str_detect(sample_id, "50d_1_") ~ "1",
+    str_detect(sample_id, "50d_2_") ~ "2",
+    str_detect(sample_id, "5d_0_") ~ "0",
+    str_detect(sample_id, "5d_1_") ~ "1",
+    str_detect(sample_id, "5d_2_") ~ "2"))
+
+# This adds an age column based on the sample id
+alpha_diversity_genus <- alpha_diversity_genus %>% 
+  mutate(age = case_when(
+    sample_id %in% c("young_5d_0_EtOH_exposition", "young_5d_1_EtOH_exposition", 
+                     "young_5d_2_EtOH_exposition") ~ "young (5 days)",
+    sample_id %in% c("old_50d_0_EtOH_exposition", "old_50d_1_EtOH_exposition", 
+                     "old_50d_2_EtOH_exposition") ~ "old (50 days)"
+  ))
+
+# This removes the non shannon indexes (for now)
+alpha_diversity_genus <- alpha_diversity_genus %>% 
+  select(c(barcode, age, etoh_exp, shannon))
+
+# This just makes the names less ugly for the visualizations
+alpha_diversity_genus <- alpha_diversity_genus %>%
+  mutate(barcode = str_replace(barcode, "barcode", "Barcode "),
+         age = str_replace(age, "old (50 days)", "Old (50 Days)"),
+         age = str_replace(age, "young (5 days)", "Young (5 Days)"))
+
+```
+
+
+## Genus Visualizations
+
+More visualizations!
+
+This will create a folder in your working directory called "plots" and save everything there. (This is here in case you only want to run the genus and not species)
+```{r}
+#### Genus Visualization
+
+#Create a directory for saving plots.
+dir.create("./plots")
+# (it's a subfolder wherever your working directory is)
+```
+
+
+#### Composition Sample Plot (Genus)
+```{r}
+#### Composition Sample Plot (Genus)
+
+# This section groups together the species that have fewer than 3 reads
+# The legend was absolutely massive and unreadable otherwise.
+# If you want to use the ungrouped species, comment out these lines,
+# and change genus_grouped to species under "create the plot"
+# (It's in there twice: in select(), and next to fill = )
+genus_counts <- class_data_relative_abundance %>%
+  count(genus, sort = TRUE) # Okay need fewer for readability
+
+class_data_relative_abundance <- class_data_relative_abundance %>%
+  left_join(genus_counts, by = "genus")
+
+class_data_relative_abundance <- class_data_relative_abundance %>%
+  mutate(genus_grouped = ifelse(n < 3, "Various (Fewer than 3 Reads)", genus))
+
+genus_counts <- class_data_relative_abundance %>% # How big is the Other group?
+  count(genus_grouped, sort = TRUE)
+
+
+# Uncomment this line, and the scale_x_discrete() line, if you want less ugly labels.
+# custom_labels <- c("0x (Old)", "1x (Old)", "2x (Old)", "0x (Young)", "1x (Young)", "2x (Young)")
+# These can be set to whatever you like, but make sure they're in the order you want them!
+
+# Create the plot
+class_data_relative_abundance %>%
+  select(etoh_exp, age, genus_grouped) %>%
+  ggplot() +
+  geom_bar(aes(x = interaction(etoh_exp, age), fill = genus_grouped), position = "fill") +
+  scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
+  scale_fill_manual(values = colour_scale) +
+  # scale_x_discrete(labels = custom_labels) +
+  theme_minimal() +
+  labs(title = "Genus Composition by EtOH Exposure", y = "", fill = "genus") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01, size = 15, face = "bold"),
+        axis.text.y = element_text(size = 15, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"),
+        legend.text = element_text(face = "bold"),
+        legend.title = element_blank())
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/genus_composition.png",  dpi = 1000, width = 12, height = 8, units = "in")
+
+```
+
+#### Composition Barcode Plot (Genus)
+```{r}
+#### Composition Barcode Plot (Genus)
+
+# Create the plot
+class_data_relative_abundance %>%
+  select(barcode, genus_grouped) %>%
+  ggplot() +
+  geom_bar(aes(x = barcode, fill = genus_grouped), position = "fill") +
+  scale_y_continuous(labels = scales::percent, expand = c(0, 0)) +
+  scale_fill_manual(values = colour_scale) +
+  # scale_x_discrete(labels = custom_labels) +
+  theme_minimal() +
+  labs(title = "Genus Composition by Barcode", y = "", fill = "genus") +
+  theme(axis.title.x = element_blank(), 
+        axis.text.x = element_text(angle = -45, hjust = 0.01, size = 15, face = "bold"),
+        axis.text.y = element_text(size = 15, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"),
+        legend.text = element_text(face = "bold"),
+        legend.title = element_blank())
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/genus_composition_barcode.png",  dpi = 1000, width = 12, height = 8, units = "in")
+
+
+```
+
+
+
+
+## Beta Diversity
+
+Now we'll do beta diversity. I'm including both PCOA and NMDS. Unifrac is not included for reasons addressed in the Extra Code Section.
+
+Unfortunately this section is not flexible for the same reasons as formatting.
+It requires particular names from the experiment. Hopefully changing the names/numbers of what barcodes are being used will make it function.
+
+For species beta diversity we want the matrix
+```{r}
+# Create sample group information from species matrix
+sample_group_species <- data.frame(
+  sample_id = rownames(species_matrix),
+  group = ifelse(grepl("barcode0[1-9]", rownames(species_matrix)), "Young", "Old")
+)
+
+# I'm not completely sure what distance matrix to use, so I'm using Bray-Curtis
+# Should be easy to change by changing method = "bray" to something else
+
+# Calculate Bray-Curtis distance
+bray_curtis_dist <- vegdist(species_matrix, method = "bray")
+
+```
+
+### PCOA
+```{r}
+# Calculate PCoA
+pcoa_results <- cmdscale(bray_curtis_dist, eig = TRUE, k = 2)
+
+# Make data frame for plotting
+pcoa_df <- as.data.frame(pcoa_results$points)
+pcoa_df$sample_id <- rownames(pcoa_df)
+
+# Merge the PCoA results with sample group information
+pcoa_df <- left_join(pcoa_df, sample_group_species, by = "sample_id")
+
+# We can make labels for exposures, but that requires a column for exposures
+pcoa_df <- pcoa_df %>% 
+  mutate(exposure = case_when(
+    sample_id %in% c("barcode01", "barcode02", "barcode03") ~ "0",
+    sample_id %in% c("barcode04", "barcode05", "barcode06") ~ "1",
+    sample_id %in% c("barcode07", "barcode08", "barcode09") ~ "2",
+    sample_id %in% c("barcode10", "barcode11", "barcode12") ~ "0",
+    sample_id %in% c("barcode13", "barcode14", "barcode15") ~ "1",
+    sample_id %in% c("barcode16", "barcode17", "barcode18") ~ "2"))
+
+
+# PCoA Plot
+ggplot(pcoa_df, aes(V1, V2, color = group, shape = exposure)) +
+  geom_point(size = 5) +
+  # scale_x_continuous(limits = c(-0.50, 0.75)) + # Thought it was smashing young group onto the axis
+  labs(title = "PCoA of Bray-Curtis Distance", x = "PCoA Axis 1", y = "PCoA Axis 2", color = "Group") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15, face = "bold"),
+        axis.text = element_text(size = 10, face = "bold"),
+        legend.title = element_text(size = 15, face = "bold"),
+        legend.text = element_text(size = 10, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"))
+
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/pcoa_bray.png")
+
+# Perform PERMANOVA
+permanova_results <- adonis2(bray_curtis_dist ~ group, data = sample_group_species)
+
+# Print PERMANOVA results
+print(permanova_results)
+
+```
+
+### NMDS
+```{r}
+#### NMDS ####
+
+
+# Perform NMDS
+nmds_result <- metaMDS(bray_curtis_dist, k = 2, trymax = 100)
+
+# Extract NMDS scores for samples
+nmds_scores <- as.data.frame(scores(nmds_result, display = "sites"))
+nmds_scores$sample_id <- rownames(nmds_scores)
+
+# Create sample group
+sample_group_genus <- data.frame(
+  sample_id = rownames(species_matrix),
+  group = ifelse(grepl("barcode0[1-9]", rownames(species_matrix)), "Young", "Old")
+)
+
+# Merge NMDS scores with sample group
+nmds_scores <- left_join(nmds_scores, sample_group_genus, by = "sample_id")
+
+# Add this column so we can differentiate between exposures
+nmds_scores <- nmds_scores %>% 
+  mutate(exposure = case_when(
+    sample_id %in% c("barcode01", "barcode02", "barcode03") ~ "0",
+    sample_id %in% c("barcode04", "barcode05", "barcode06") ~ "1",
+    sample_id %in% c("barcode07", "barcode08", "barcode09") ~ "2",
+    sample_id %in% c("barcode10", "barcode11", "barcode12") ~ "0",
+    sample_id %in% c("barcode13", "barcode14", "barcode15") ~ "1",
+    sample_id %in% c("barcode16", "barcode17", "barcode18") ~ "2"))
+
+# Create NMDS plot
+ggplot(nmds_scores, aes(x = NMDS1, y = NMDS2, color = group, shape = exposure)) +
+  geom_point(size = 5) +
+  theme_minimal() +
+  labs(title = "NMDS of Bray-Curtis Distance", x = "NMDS1", y = "NMDS2", color = "Group") +
+  theme_minimal() +
+  theme(axis.title = element_text(size = 15, face = "bold"),
+        axis.text = element_text(size = 10, face = "bold"),
+        legend.title = element_text(size = 15, face = "bold"),
+        legend.text = element_text(size = 10, face = "bold"),
+        plot.title = element_text(size = 20, face = "bold"))
+
+# Remember ggsave() saves the last generated plot by default
+# Change the file name so it doesn't overwrite the last one
+ggsave("./plots/nmds_bray.png")
+
+# Perform PERMANOVA
+permanova_results <- adonis2(bray_curtis_dist ~ group, data = sample_group_genus)
+
+# Print PERMANOVA results
+print(permanova_results)
+
+```
+
+
+
+
+
+
+
+
+
+## Extra Code
+
+#### Genus by Species Name
+There is an alternate way to assign genus by using the first half of binomial species names.
+
+This works fairly well, but there was a particular species it kept giving some random genus that was nothing like the one in the binomial name.
+
+I did not use this method because the genera assigned with Taxize did not have that problem and were identical otherwise. Here is the code in case it's useful elsewhere.
+```{r, eval=FALSE}
+# (This chunk is set not to run its code)
+
+# This assumes that there is a Genus column that has some NA values
+# It will still work if some, or even all are already assigned because
+# it only replaces the NA values
+
+# Replace empty Genus values with NA
+class_data_format$species <- ifelse(class_data_filtered$species == "", NA, class_data_filtered$species)
+
+# See how many species have NA for genus
+na_species <- class_data_format %>%
+  filter(is.na(genus)) %>%
+  select(species) %>%
+  unique() #There are 263 species without assigned genus
+
+# Check that none of the names are single words by checking for spaces
+na_species$has_space <-  str_detect(na_species$species, " ")
+# View(na_species) # Looks good
+
+# Assign genus
+class_data_format <- class_data_format %>%
+  mutate(genus = ifelse(is.na(genus), word(species, 1), genus))
+# View(class_data_format)
+```
+
+
+#### Phyloseq Object
+
+I created a phyloseq object with the EtoH Exposure dataset intending to use it to do a weighted and unweighted Unifrac for beta diversity. Unfortunately, I didn't realize that that also required a phylogenetic tree with distances. I believe that can be generated, but I do not have enough time left at UPR to learn how. 
+
+For any brave souls who intend to tread where I could not, here is a start.
+```{r, eval=FALSE}
+# (This chunk is set not to run its code)
+
+#### Create Phyloseq Object (Works, but no phylotree/unifrac)
+
+# OTU Table
+otu_table <- t(species_matrix) # It's just the species matrix transposed
+
+# Tax Table
+tax_table <- class_data_relative_abundance %>%
+  select(species, genus, family, order, class, phylum)
+tax_table <- tax_table %>% distinct() # Remove all the duplicate rows
+rownames(tax_table) <- tax_table$species # species as rownames
+
+mismatches <- setdiff(otu_table, tax_table)
+if (length(mismatches) > 0) {
+  warning("Mismatches found in species names: ", paste(mismatches, collapse = ", "))
+}
+
+# Ensure species names in OTU table are set as row names
+otu_species <- rownames(otu_table)
+
+# Reorder taxonomic table to match the OTU table species order
+tax_table <- tax_table[otu_species, ]
+# At this point they have matching rows
+rownames(tax_table) <- tax_table$species # species as rownames
+
+
+# Create OTU and taxonomy tables for phyloseq
+otu_table <- otu_table(as.matrix(otu_matrix), taxa_are_rows = TRUE)
+tax_table <- tax_table(as.matrix(tax_table))
+
+taxa_names(otu_table) == taxa_names(tax_table)
+# It seems that the data frames have to both have the species as rownames
+# they have to be exactly the same, and the order *HAS* to match
+
+# Sample Data
+sample_data <- class_data_relative_abundance %>%
+  select(barcode, age, etoh_exp, total_barcode_reads)
+
+# create the object
+physeq_object <- phyloseq(otu_table, tax_table, sample_data)
+
+```
+

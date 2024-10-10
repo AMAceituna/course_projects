@@ -1,0 +1,50 @@
+---
+title: "challenge1"
+author: "Austen"
+date: "2024-06-11"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+# Titlus Maximus
+
+## Section Alpha
+
+_italicized? like with the meatballs?_
+
+### Subsection A
+
+## Section 2
+
+Itemized list:
+
+* Item
+* Object
+* Thing
+
+### Subsection II
+
+[Clikc this to die instantly ;)](https://swcarpentry.github.io/r-novice-gapminder/14-knitr-markdown.html)
+
+![thang](https://swcarpentry.github.io/r-novice-gapminder/assets/images/software-logo.svg)
+
+
+
+```{r echo = FALSE}
+
+gapminder <- read.csv("gapminder_data.csv")
+
+library(ggplot2)
+ggplot(data = gapminder, mapping = aes(x = year, y = pop, color = continent, group = country)) +
+  geom_line() +
+  scale_y_log10()
+```
+
+The average life expectancy in gapminder dataset is `r mean(gapminder$lifeExp)`
+
+
+

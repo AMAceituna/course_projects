@@ -1,0 +1,19 @@
+#### To do in R with Alpha Div ####
+- Change barcode labels
+- merge replicate barcodes into boxplots
+
+# Play around, make more graphs
+- Stuff in the drive presentation
+	> stacked bars for species
+	> boxplots with merged replicate barcodes
+
+- show difference between with unclassifieds and without
+	> uhh a lot of the unclassified barcode has identified species
+- Genus diversity?
+
+
+- Look at other papers for what they do with unclassifieds
+	> show proportion of unclassifieds
+	
+	
+# Ya know, we could also look in the basecalling thing for the average read lengths and scores

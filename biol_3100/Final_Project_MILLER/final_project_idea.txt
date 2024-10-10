@@ -1,0 +1,36 @@
+Final Project Idea:
+Data Analysis of Facebook Page Meme page.
+
+1.    Create a plaintext document named "final_project_idea.txt"
+
+Sure thing.
+
+2.    In it, describe your idea for a data analysis final project
+
+My idea for a data analysis project is to use the Insights data provided by the Meta business suite for the meme page I co-admin.
+When users create pages on Facebook, Meta Business Suite is the interface through which the pages are run. Facebook being Facebook, Meta
+compiles a lot of data. I have already found how to export the data (it's in Spanish because my Facebook is in Spanish, but easily 
+translated.) Luckily the files from Meta are already .csvs.
+
+Addendum: The .csvs that Meta gave me pull up an error when I try to import them into R Studio. I ended up copy pasting the data into
+blank sheets and that seems to work.
+
+3.    Also, Describe the sort of data you will use, potential sources, and what the data might look like
+
+There is a lot of data available here. To simplify things, I will just use the data for 2022, which is when the page was already relatively
+successful, but quickly growing. We had a few memes go viral last year, so it should look like there are 2-3 massively disproportionate spikes
+in page reach. I'm not exactly sure how reach is calculated. It's something like all the accounts who were potentially exposed to your posts.
+
+The thing I am interested in is comparing how our OC (original content) compares to reshares.
+posts. I read somewhere that the shared vs OC ratio on most websites is over 10:1. How much does that ratio really matter?
+Our page has a lot of both OC and reshares, so I'm curious which tend to do better and which have contributed more to our page's growth.
+
+OC is important for page reputation (don't want to be "just another reshare page"), but how important is it quantitatively?
+Another dimension of analysis could be comparing the success of the three admins using those two categories. Ie. Maybe my OC is the best, but
+my friend David is so good at spotting good content for resharing that he's contributed more to the page's reach overall.
+The data I can get from Meta also includes demographics, different types of audience engagement, etc. So this project can be modified/expanded
+relatively easily.
+
+Addendum: Some of the data is restricted to particular periods of time. I can download it by chunks and put it back together or just use a smaller
+timeframe like the last three months of 2022 or some such. I don't want to use the latest data because the page is actively putting out new content
+and sometimes we modify recent posts.

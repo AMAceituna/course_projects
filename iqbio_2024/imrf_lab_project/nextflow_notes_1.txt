@@ -1,0 +1,52 @@
+# NanoRTax Diego Notes
+# Edits to ask Diego about
+Fuuuckk I thought I understood
+
+
+# Next flow needs to run from my path
+	- java
+
+Wait is Java on Boqueron? Do we need to install it too?
+	
+What do we mean by user path?
+Wait is the idea not to do it in boqueron? Or are we installing nextflow into boqueron?
+
+# For boqueron add to user path
+	- i.e. use mv, not source
+	- can go to website of nextflow installation stuff
+	- nextflow executable path (need to redo each time)
+	- authorization with mando de autorizacion
+
+How to get authorization, where is it needed?
+	
+Point to path of nextflow executable, but where exactly?
+	
+# envs folder miniconda
+	- conda envs list to see
+	- pipeline environment doesn't get saved to envs folder
+	- conda activate (big long name)
+	
+Conda/miniconda isn't in boqueron? Install that too?
+Where to find the big long name?
+	
+# command: export NXF_VER=22.10.0 (it's in the script)
+	- sets nextflow version
+	- can run old version of nextflow internally
+	
+Have the script, but where to run it from?
+
+# Normalization
+Huh? Like stats normalization?
+
+# Quime has some kind of problem?
+	- unexplicit step
+	- merge replicas
+	- problem with depth?
+	- undersampling
+	
+Didn't really catch this tbh.
+
+# Diversity
+	- need scripts to do diversity
+	- can do with phyloseq or vegan in R
+	
