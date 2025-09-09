@@ -2,21 +2,8 @@
 
 import numpy as np
 
-# Get sequences
-seq1 = input("Please give sequence 1 as either a string or list:")
-seq2 = input("Please give sequence 2 as either a string or list:")
-
-# test
-# seq1 = "ATC"
-# seq2 = "ATGGA"
-
-# cast as list
-seq1 = list(seq1)
-seq2 = list(seq2)
-
-
 def nwalgo(seq1, seq2):
-    #### set up score matrix
+    #### Set up score matrix
     score_matrix = np.zeros((len(seq1) + 1, len(seq2) + 1))
     # BTW This makes seq1 the y rather than x axis of matrix, so they look backwards for the rest of the script.
 
@@ -114,24 +101,20 @@ def nwalgo(seq1, seq2):
     # I have to go to sleep.
 
 
+if __name__ == "__main__":
+    # Get sequences
+    seq1 = input("Please give sequence 1 as either a string or list:")
+    seq2 = input("Please give sequence 2 as either a string or list:")
 
-    
+    # test
+    # seq1 = "ATC"
+    # seq2 = "ATGGA"
 
+    # cast as list
+    seq1 = list(seq1)
+    seq2 = list(seq2)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-nwalgo(seq1, seq2)
+    nwalgo(seq1, seq2)
     
 
     
